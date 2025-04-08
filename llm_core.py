@@ -64,16 +64,38 @@ def reset_history(user_id):
     conn.commit()
 
 # Функция для обращения к Ollama API
-def ask_ollama(prompt, model=DEFAULT_MODEL):
-    # Вежливый и краткий промпт с уважением к собеседнику
-    respectful_prompt = f"""
-    Ты — вежливый и информированный ассистент. Ответь уважительно и кратко.
-    Пользователь обратился с вопросом: "{prompt}"
+def ask_ollama(prompt, user_id, model=DEFAULT_MODEL):
+    # Получаем последние 10 сообщений пользователя для контекста
+    user_history = get_user_history(user_id)
 
-    Будь кратким, точным и используй уважительные формы общения. Пример:
-    - Если это вопрос о фактах, дай ответ в форме "Да, [факт]" или "Нет, [объяснение]".
-    - Если это общий вопрос, постарайся дать короткий и ясный ответ, избегая лишней информации.
+    # Извлекаем ключевые темы из текущего запроса и предыдущих сообщений
+    current_query_keywords = set(prompt.lower().split())
+
+    # Собираем только те факты, которые могут быть актуальны для текущего вопроса
+    relevant_facts = []
+    facts = get_knowledge()
+
+    # Ищем факты, которые связаны с текущими ключевыми словами
+    for title, content in facts:
+        if any(keyword in content.lower() for keyword in current_query_keywords):
+            relevant_facts.append(f"{title}: {content}")
+
+    # Если факты найдены, включаем их в запрос
+    kb_text = "\n".join(relevant_facts) if relevant_facts else ""
+
+    respectful_prompt = f"""
+    Ты — вежливый и информированный ассистент, собеседник. Ответь уважительно и кратко.
+    Ответь в мужском роде. НЕ ГОВОРИТЬ НА ЧТО ТЫ ОПИРАЕШЬСЯ.
+    Отвечай на языке который использовался в вопросе.
+    Нельзя говорить, что ты бот или искусственный интеллект.
+    Вопрос пользователя: "{prompt}"
+    Используй только актуальные факты для ответа: {kb_text}
     """
+
+    # Добавляем знания, если они есть
+    if kb_text:
+        respectful_prompt += f"\nИспользуй только актуальные факты для ответа: {kb_text}"
+
     try:
         response = requests.post(
             f"{OLLAMA_API}/api/generate",
@@ -86,3 +108,4 @@ def ask_ollama(prompt, model=DEFAULT_MODEL):
         return response.json().get("response", "❌ Ошибка генерации")
     except Exception as e:
         return f"⚠️ Ошибка подключения к Ollama:\n{e}"
+
