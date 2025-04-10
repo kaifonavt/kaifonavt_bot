@@ -1,10 +1,11 @@
 import tkinter as tk
 from tkinter import messagebox
-from ai_core import load_kb_from_db, get_all_facts, add_fact, update_fact, delete_fact, vector_search
+from core import load_kb_from_db, add_fact, update_fact, delete_fact, vector_search
+
 
 def refresh_facts():
     listbox.delete(0, tk.END)
-    for fact in get_all_facts():
+    for fact in load_kb_from_db():
         listbox.insert(tk.END, f"{fact[0]}: {fact[1]}")
 
 def on_add():
