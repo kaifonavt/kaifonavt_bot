@@ -53,7 +53,6 @@ def add_fact(fact_text):
     except Exception as e:
         print(f"Ошибка при добавлении факта: {e}")
 
-# Обновление факта
 def update_fact(fact_id, new_text):
     try:
         embedding = generate_embedding(new_text)
@@ -76,7 +75,7 @@ def delete_fact(fact_id):
     except Exception as e:
         print(f"Ошибка при удалении факта: {e}")
 
-def vector_search(query, top_k=5):
+def vector_search(query, top_k=5, similarity_threshold=0.5):
     query_vec = generate_embedding(query)
     results = []
 
@@ -87,7 +86,9 @@ def vector_search(query, top_k=5):
             fact_id, fact_text, emb_bytes = row
             fact_vec = np.frombuffer(emb_bytes, dtype=np.float32)
             similarity = np.dot(query_vec, fact_vec) / (np.linalg.norm(query_vec) * np.linalg.norm(fact_vec))
-            results.append((fact_id, fact_text, similarity))
+
+            if similarity >= similarity_threshold:
+                results.append((fact_id, fact_text, similarity))
 
     results.sort(key=lambda x: x[2], reverse=True)
     return results[:top_k]
@@ -115,5 +116,4 @@ def generate_response(user_id, prompt):
     except Exception as e:
         return f"⚠️ Ошибка при обращении к Ollama: {e}"
 
-# Инициализация базы знаний
 init_db()

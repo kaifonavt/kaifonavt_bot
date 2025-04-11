@@ -39,8 +39,12 @@ def on_search():
     if query:
         results = vector_search(query)
         results_box.delete(0, tk.END)
-        for fact_id, fact_text, similarity in results:
-            results_box.insert(tk.END, f"{fact_id}: {fact_text} - Similarity: {similarity:.4f}")
+        if results:
+            for fact_id, fact_text, similarity in results:
+                results_box.insert(tk.END, f"{fact_id}: {fact_text} - Similarity: {similarity:.4f}")
+        else:
+            results_box.insert(tk.END, "Нет релевантных фактов.")
+
 
 load_kb_from_db()
 
